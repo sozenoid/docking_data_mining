@@ -49,15 +49,27 @@ def create_dictionary_smi_pbnbr(listoflogs, pubchem_smi_database_file, outf):
 
     keys = set()
     for f in listoflogs:
-        pbnum = f.split(".")[0]
-        keys.add(int(pbnum))
+        try:
+            pbnum = f.split("/")[-1].split(".")[0]
+            keys.add(int(pbnum))
+        except:
+            print f
     dic = dict.fromkeys(keys)
-    
+
     with open(pubchem_smi_database_file, 'rb') as r:
         for line in r:
-            smiles, pbnum = line.strip().split()[-1]
+            smiles, pbnum = line.strip().split('\t')
+            pbnum = int(pbnum)
             if pbnum in dic:
                 dic[pbnum] = smiles
-    
+
     with open(outf, 'wb') as w:
-        cPickle.dump(dic, outf)
+        cPickle.dump(dic, w)
+
+
+if __name__ == "__main__":
+    import glob
+    import cPickle
+    create_dictionary_smi_pbnbr(glob.glob("/home/macenrola/Documents/docked_for_data_analysis/docked_logs/*LOG"),
+                                "/home/macenrola/Documents/docked_for_data_analysis/pubchem_smis",
+                                "/home/macenrola/Documents/docked_for_data_analysis/500k_docked_smidic")
