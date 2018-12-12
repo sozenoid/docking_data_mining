@@ -67,9 +67,46 @@ def create_dictionary_smi_pbnbr(listoflogs, pubchem_smi_database_file, outf):
         cPickle.dump(dic, w)
 
 
+def parse_audotock_vina_log(autodock_vina_log):
+    """
+    :param autodock_vina_log: full path to the autodock vina path
+                /home/macenrola/Documents/docked_for_data_analysis/docked_logs/9340888.pdbqt-LOG
+    :return: returns the best binding energy as estimated by the autodock binding model
+    """
+    with open(autodock_vina_log, 'rb') as r:
+        for line in r:
+            if line[:4] == "   1":
+                energy = line.split()[1]
+                return energy
+
+def make_list_with_pb_num_smi_energy(listoflogs, smidic, outf):
+    """
+    :param listoflogs: a list of log files formatted as a standard autodock vina output stdout
+    :param smidic: a dic as produced by create_dictionary_smi_pbnbr, where the pubchem in the filename of the log files
+    are the keys of a dictionary where matching values are the smiles
+    :param outf:  name for the output file
+    :return: prints out a file formatted as "{}\t{}\t{}\n".format(pubchem_number, smiles, energy)
+    """
+
+    with open(smidic, "rb") as r:
+        dic = cPickle.load(r)
+
+    with open(outf, 'wb') as w:
+        for f in listoflogs:
+            try:
+                pbnum = int(f.split("/")[-1].split(".")[0])
+                energy = parse_audotock_vina_log(f)
+                w.write('{0:10d}\t{1}\t{2}\n'.format(pbnum, dic[pbnum], energy))
+            except:
+                print f
+
 if __name__ == "__main__":
     import glob
     import cPickle
-    create_dictionary_smi_pbnbr(glob.glob("/home/macenrola/Documents/docked_for_data_analysis/docked_logs/*LOG"),
-                                "/home/macenrola/Documents/docked_for_data_analysis/pubchem_smis",
-                                "/home/macenrola/Documents/docked_for_data_analysis/500k_docked_smidic")
+    # create_dictionary_smi_pbnbr(glob.glob("/home/macenrola/Documents/docked_for_data_analysis/docked_logs/*LOG"),
+    #                             "/home/macenrola/Documents/docked_for_data_analysis/pubchem_smis",
+    #                             "/home/macenrola/Documents/docked_for_data_analysis/500k_docked_smidic")
+    # print parse_audotock_vina_log("/home/macenrola/Documents/docked_for_data_analysis/docked_logs/9340888.pdbqt-LOG")
+    make_list_with_pb_num_smi_energy(glob.glob("/home/macenrola/Documents/docked_for_data_analysis/docked_logs/*LOG"),
+                                     "/home/macenrola/Documents/docked_for_data_analysis/500k_docked_smidic",
+                                     "/home/macenrola/Documents/docked_for_data_analysis/500k_docked_pubsmienergy_restart")
